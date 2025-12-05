@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Создать топик - Форум{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-3">
+            <a href="{{ url_for('forum.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> К списку топиков
+            </a>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="bi bi-plus-lg"></i> Создать новый топик
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('forum.topic_create') }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Заголовок</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               minlength="5" maxlength="200" required 
+                               placeholder="О чем будет ваш топик?">
+                        <small class="form-text text-muted">Минимум 5 символов</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Содержание</label>
+                        <textarea class="form-control" id="content" name="content" 
+                                  rows="10" required 
+                                  placeholder="Расскажите подробнее..."></textarea>
+                        <small class="form-text text-muted">Минимум 10 символов</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-lg"></i> Создать топик
+                        </button>
+                        <a href="{{ url_for('forum.index') }}" class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

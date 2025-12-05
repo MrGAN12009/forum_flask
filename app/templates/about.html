@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}О проекте - Форум{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title mb-4">
+                    <i class="bi bi-info-circle"></i> О проекте
+                </h2>
+                
+                <p class="lead">
+                    Это современный веб-форум, созданный с использованием Flask и PostgreSQL.
+                </p>
+                
+                <h4 class="mt-4">Возможности</h4>
+                <ul>
+                    <li>Регистрация и авторизация пользователей</li>
+                    <li>Создание и обсуждение топиков</li>
+                    <li>Личные сообщения через WebSocket</li>
+                    <li>Загрузка изображений</li>
+                    <li>Профили пользователей</li>
+                    <li>Безопасность и HTTPS</li>
+                </ul>
+                
+                <h4 class="mt-4">Технологии</h4>
+                <ul>
+                    <li><strong>Backend:</strong> Flask, SQLAlchemy, Flask-SocketIO</li>
+                    <li><strong>Frontend:</strong> Bootstrap 5, Jinja2</li>
+                    <li><strong>База данных:</strong> PostgreSQL</li>
+                    <li><strong>Инфраструктура:</strong> Docker, Nginx</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

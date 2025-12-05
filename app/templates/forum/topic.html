@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.title }} - Форум{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('forum.index') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> К списку топиков
+    </a>
+</div>
+
+<!-- Топик -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="mb-0">{{ topic.title }}</h3>
+    </div>
+    <div class="card-body">
+        <div class="d-flex mb-3">
+            <img src="{{ url_for('static', filename='uploads/avatars/' + topic.author.avatar) }}" 
+                 alt="{{ topic.author.username }}" class="avatar-md me-3">
+            <div>
+                <h5>
+                    <a href="{{ url_for('profile.view', user_id=topic.author.id) }}">
+                        {{ topic.author.username }}
+                    </a>
+                </h5>
+                <small class="text-muted">
+                    <i class="bi bi-clock"></i> {{ topic.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    <i class="bi bi-eye ms-2"></i> {{ topic.views }} просмотров
+                </small>
+            </div>
+        </div>
+        <div class="topic-content">
+            {{ topic.content|safe }}
+        </div>
+    </div>
+</div>
+
+<!-- Посты -->
+<h4 class="mb-3">Ответы</h4>
+
+{% if posts.items %}
+{% for post in posts.items %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex">
+                <img src="{{ url_for('static', filename='uploads/avatars/' + post.author.avatar) }}" 
+                     alt="{{ post.author.username }}" class="avatar-sm me-2">
+                <div>
+                    <h6 class="mb-0">
+                        <a href="{{ url_for('profile.view', user_id=post.author.id) }}">
+                            {{ post.author.username }}
+                        </a>
+                    </h6>
+                    <small class="text-muted">
+                        {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    </small>
+                </div>
+            </div>
+            {% if current_user.is_authenticated and post.author.id == current_user.id %}
+            <form method="POST" action="{{ url_for('forum.post_delete', post_id=post.id) }}" 
+                  onsubmit="return confirm('Удалить сообщение?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <p class="mb-2">{{ post.content }}</p>
+        {% if post.image %}
+        <img src="{{ url_for('static', filename='uploads/posts/' + post.image) }}" 
+             alt="Post image" class="post-image">
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+<!-- Pagination для постов -->
+{% if posts.pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if posts.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('forum.topic_view', topic_id=topic.id, page=posts.prev_num) }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == posts.page %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('forum.topic_view', topic_id=topic.id, page=page_num) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if posts.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('forum.topic_view', topic_id=topic.id, page=posts.next_num) }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Пока нет ответов. Будьте первым!
+</div>
+{% endif %}
+
+<!-- Форма ответа -->
+{% if current_user.is_authenticated %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Ваш ответ</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('forum.post_create', topic_id=topic.id) }}" 
+              enctype="multipart/form-data">
+            <div class="mb-3">
+                <textarea class="form-control" name="content" rows="5" 
+                          placeholder="Напишите ваш ответ..." required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="image" class="form-label">
+                    <i class="bi bi-image"></i> Прикрепить изображение (необязательно)
+                </label>
+                <input type="file" class="form-control" id="image" name="image" 
+                       accept="image/*">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send"></i> Отправить
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning mt-4">
+    <i class="bi bi-exclamation-triangle"></i> 
+    <a href="{{ url_for('auth.login') }}">Войдите</a> или 
+    <a href="{{ url_for('auth.register') }}">зарегистрируйтесь</a>, 
+    чтобы ответить в этом топике.
+</div>
+{% endif %}
+{% endblock %}
+

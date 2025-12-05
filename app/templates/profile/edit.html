@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Редактировать профиль - Форум{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="bi bi-pencil"></i> Редактировать профиль
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('profile.edit') }}" enctype="multipart/form-data">
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar) }}" 
+                             alt="{{ current_user.username }}" class="avatar-lg" id="avatar-preview">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="avatar" class="form-label">
+                            <i class="bi bi-image"></i> Аватар
+                        </label>
+                        <input type="file" class="form-control" id="avatar" name="avatar" 
+                               accept="image/*" onchange="previewAvatar(this)">
+                        <small class="form-text text-muted">
+                            Рекомендуемый размер: 200x200px. Разрешенные форматы: JPG, PNG, GIF
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               value="{{ current_user.username }}" minlength="3" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" 
+                               value="{{ current_user.email }}" disabled>
+                        <small class="form-text text-muted">Email нельзя изменить</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Сохранить изменения
+                        </button>
+                        <a href="{{ url_for('profile.view', user_id=current_user.id) }}" 
+                           class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function previewAvatar(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatar-preview').src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}
+
