@@ -1,9 +1,10 @@
 """Модели базы данных"""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login_manager
+import secrets
 
 
 class User(UserMixin, db.Model):
@@ -16,6 +17,11 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     avatar = db.Column(db.String(255), default='default-avatar.png')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Email verification fields
+    email_verified = db.Column(db.Boolean, default=False)
+    verification_code = db.Column(db.String(6), nullable=True)
+    verification_code_expires = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     topics = db.relationship('Topic', backref='author', lazy='dynamic', cascade='all, delete-orphan')
@@ -32,6 +38,30 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Проверить пароль"""
         return check_password_hash(self.password_hash, password)
+    
+    def generate_verification_code(self):
+        """Сгенерировать код подтверждения (6 цифр)"""
+        self.verification_code = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
+        self.verification_code_expires = datetime.utcnow() + timedelta(hours=1)
+        return self.verification_code
+    
+    def verify_code(self, code):
+        """Проверить код подтверждения"""
+        if not self.verification_code or not self.verification_code_expires:
+            return False
+        
+        # Проверка истечения срока
+        if datetime.utcnow() > self.verification_code_expires:
+            return False
+        
+        # Проверка кода
+        if self.verification_code == code:
+            self.email_verified = True
+            self.verification_code = None
+            self.verification_code_expires = None
+            return True
+        
+        return False
     
     def __repr__(self):
         return f'<User {self.username}>'

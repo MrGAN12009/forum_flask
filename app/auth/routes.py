@@ -1,10 +1,11 @@
 """Маршруты аутентификации"""
 
-from flask import render_template, redirect, url_for, flash, request
-from flask_login import login_user, logout_user, current_user
+from flask import render_template, redirect, url_for, flash, request, session
+from flask_login import login_user, logout_user, current_user, login_required
 from app.auth import auth_bp
 from app import db
 from app.models import User
+from app.utils import send_verification_email
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -52,8 +53,15 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        flash('Регистрация успешна! Теперь вы можете войти.', 'success')
-        return redirect(url_for('auth.login'))
+        # Отправка кода подтверждения
+        send_verification_email(user)
+        db.session.commit()  # Сохраняем код в БД
+        
+        # Сохраняем user_id в сессии для проверки
+        session['pending_verification_user_id'] = user.id
+        
+        flash('Регистрация успешна! Проверьте вашу почту и введите код подтверждения.', 'success')
+        return redirect(url_for('auth.verify_email'))
     
     return render_template('auth/register.html')
 
@@ -72,6 +80,14 @@ def login():
         user = User.query.filter_by(email=email).first()
         
         if user and user.check_password(password):
+            # Проверка подтверждения email
+            if not user.email_verified:
+                flash('Пожалуйста, подтвердите ваш email перед входом.', 'warning')
+                send_verification_email(user)
+                db.session.commit()
+                session['pending_verification_user_id'] = user.id
+                return redirect(url_for('auth.verify_email'))
+            
             login_user(user, remember=remember)
             flash('Вы успешно вошли в систему!', 'success')
             
@@ -90,4 +106,66 @@ def logout():
     logout_user()
     flash('Вы вышли из системы', 'info')
     return redirect(url_for('main.index'))
+
+
+@auth_bp.route('/verify-email', methods=['GET', 'POST'])
+def verify_email():
+    """Подтверждение email адреса"""
+    # Проверяем, есть ли user_id в сессии
+    user_id = session.get('pending_verification_user_id')
+    if not user_id:
+        flash('Сначала зарегистрируйтесь', 'warning')
+        return redirect(url_for('auth.register'))
+    
+    user = User.query.get(user_id)
+    if not user:
+        flash('Пользователь не найден', 'danger')
+        return redirect(url_for('auth.register'))
+    
+    # Если уже подтвержден
+    if user.email_verified:
+        session.pop('pending_verification_user_id', None)
+        flash('Email уже подтвержден', 'info')
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        code = request.form.get('code', '').strip()
+        
+        if not code:
+            flash('Введите код подтверждения', 'danger')
+            return render_template('auth/verify_email.html', email=user.email)
+        
+        if user.verify_code(code):
+            db.session.commit()
+            session.pop('pending_verification_user_id', None)
+            flash('Email успешно подтвержден! Теперь вы можете войти.', 'success')
+            return redirect(url_for('auth.login'))
+        else:
+            flash('Неверный или истёкший код подтверждения', 'danger')
+    
+    return render_template('auth/verify_email.html', email=user.email)
+
+
+@auth_bp.route('/resend-verification', methods=['POST'])
+def resend_verification():
+    """Повторная отправка кода подтверждения"""
+    user_id = session.get('pending_verification_user_id')
+    if not user_id:
+        flash('Сначала зарегистрируйтесь', 'warning')
+        return redirect(url_for('auth.register'))
+    
+    user = User.query.get(user_id)
+    if not user:
+        flash('Пользователь не найден', 'danger')
+        return redirect(url_for('auth.register'))
+    
+    if user.email_verified:
+        session.pop('pending_verification_user_id', None)
+        flash('Email уже подтвержден', 'info')
+        return redirect(url_for('auth.login'))
+    
+    send_verification_email(user)
+    db.session.commit()
+    flash('Новый код отправлен на вашу почту', 'success')
+    return redirect(url_for('auth.verify_email'))
 

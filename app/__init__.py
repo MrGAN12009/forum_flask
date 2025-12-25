@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 from flask_migrate import Migrate
+from flask_mail import Mail
 from config import config
 
 # Инициализация расширений
@@ -13,6 +14,7 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 socketio = SocketIO(cors_allowed_origins="*")
 migrate = Migrate()
+mail = Mail()
 
 
 def create_app(config_name='default'):
@@ -25,6 +27,7 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     socketio.init_app(app)
     migrate.init_app(app, db)
+    mail.init_app(app)
     
     # Настройка login manager
     login_manager.login_view = 'auth.login'
